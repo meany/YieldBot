@@ -1,0 +1,7 @@
+{
+  "EtherscanToken": "<TOKEN>",
+
+  "ConnectionStrings": {
+    "Database": "<CONNECTION STRING>"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "BotToken": "<TOKEN>",
+  "BotWatch": true,
+  "ChatIds": [ 0 ],
+  "AdminId": 0,
+
+  "ConnectionStrings": {
+    "Database": "<CONNECTION STRING>"
+  }
+}
