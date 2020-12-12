@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -47,6 +48,18 @@ namespace dm.YLD.Data
                 .OrderByDescending(x => x.Date)
                 .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
+        }
+
+        public static async Task<List<Holder>> GetTop(AppDbContext db, int takeAmt)
+        {
+            var items = await db.Holders
+                .AsNoTracking()
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return items.OrderByDescending(x => BigInteger.Parse(x.Value))
+                .Take(takeAmt)
+                .ToList();
         }
     }
 }

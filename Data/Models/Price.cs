@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.Serialization;
-using System.Text;
+using System.Text.Json.Serialization;
 
 namespace dm.YLD.Data.Models
 {
@@ -13,12 +11,12 @@ namespace dm.YLD.Data.Models
 
     public class Price
     {
-        [IgnoreDataMember]
+        [JsonIgnore]
         public int PriceId { get; set; }
         public DateTime Date { get; set; }
-        [IgnoreDataMember]
+        [JsonIgnore]
         public PriceSource Source { get; set; }
-        [IgnoreDataMember]
+        [JsonIgnore]
         public Guid Group { get; set; }
 
         [Column(TypeName = "decimal(11, 6)")]

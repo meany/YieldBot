@@ -8,6 +8,7 @@ namespace dm.YLD.Data
 {
     public class AppDbContext : DbContext
     {
+        public DbSet<Holder> Holders { get; set; }
         public DbSet<Price> Prices { get; set; }
         public DbSet<Request> Requests { get; set; }
         public DbSet<Stat> Stats { get; set; }
@@ -19,6 +20,8 @@ namespace dm.YLD.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Holder>()
+                .HasIndex(x => x.Value);
             modelBuilder.Entity<Price>()
                 .HasIndex(x => x.Group);
             modelBuilder.Entity<Price>()

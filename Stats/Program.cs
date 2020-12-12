@@ -2,6 +2,7 @@
 using dm.YLD.Data;
 using dm.YLD.Data.Models;
 using dm.YLD.Response;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Configuration;
@@ -79,6 +80,7 @@ namespace dm.YLD.Stats
 
                 dbTxs = db.Transactions
                     .AsNoTracking()
+                    .OrderBy(x => x.TimeStamp)
                     .ToList();
                 int totalTxs = (dbTxs.Count - 1) / 2;
 
@@ -95,8 +97,13 @@ namespace dm.YLD.Stats
 
                 db.Add(item);
 
-                log.Info("Saving stats to database");
+                log.Info("Saving transaction stats to database");
                 db.SaveChanges();
+
+                //
+
+                log.Info("Building holders table");
+                await BuildHolders();
             }
             catch (Exception ex)
             {
@@ -210,6 +217,64 @@ namespace dm.YLD.Stats
                 }
                 await db.SaveChangesAsync();
             }
+        }
+
+        private async Task BuildHolders()
+        {
+            var holders = new List<Holder>();
+
+            foreach (var item in dbTxs)
+            {
+                if (item.From == item.To)
+                    continue;
+
+                var fromHolder = holders.Where(x => x.Address == item.From).FirstOrDefault();
+                if (fromHolder != null)
+                {
+                    var newValue = BigInteger.Parse(fromHolder.Value) - BigInteger.Parse(item.Value);
+                    fromHolder.Value = newValue.ToString();
+                }
+                else
+                {
+                    holders.Add(new Holder
+                    {
+                        Address = item.From,
+                        FirstBlockNumber = item.BlockNumber,
+                        FirstTimeStamp = item.TimeStamp,
+                        Value = $"-{item.Value}"
+                    });
+                }
+
+                var toHolder = holders.Where(x => x.Address == item.To).FirstOrDefault();
+                if (toHolder != null)
+                {
+                    var newValue = BigInteger.Parse(toHolder.Value) + BigInteger.Parse(item.Value);
+                    toHolder.Value = newValue.ToString();
+                }
+                else
+                {
+                    holders.Add(new Holder
+                    {
+                        Address = item.To,
+                        FirstBlockNumber = item.BlockNumber,
+                        FirstTimeStamp = item.TimeStamp,
+                        Value = item.Value
+                    });
+                }
+            }
+
+            await db.TruncateAsync<Holder>();
+
+            // filter out:
+            // - non-holders
+            // - the 0x0000... acct
+            // - the 0x1e58... (first acct)
+            // - the 0xb5b9... (coiner req acct)
+            db.AddRange(holders.Where(x => x.Value != "0" &&
+                !x.Value.Contains('-') &&
+                x.Address != "0x1e580e3ced413ce93028b3fe5cfce973e93e7ec8" &&
+                x.Address != "0xb5b93f7396af7e85353d9c4d900ccbdbdac6a658"));
+            await db.SaveChangesAsync();
         }
     }
 }
