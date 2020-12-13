@@ -1,0 +1,9 @@
+share - Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
+tshare - (alias of share) Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
+rshare - RFI liquidity provider: Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
+eshare - ETH liquidity provider: Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
+price - Current price
+supply - Current supply and circulation
+mcap - Current market cap and 24h volume
+top - Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
+holders - Get the current total number of holders

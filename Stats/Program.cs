@@ -32,6 +32,9 @@ namespace dm.YLD.Stats
 
         private BigInteger supply;
         private BigInteger teamAmt;
+        private BigInteger xb5b9Amt;
+        private BigInteger uniswapRfiAmt;
+        private BigInteger uniswapEthAmt;
         private List<EsTxsResult> esTxs;
         private List<Transaction> dbTxs;
 
@@ -84,7 +87,7 @@ namespace dm.YLD.Stats
                     .ToList();
                 int totalTxs = (dbTxs.Count - 1) / 2;
 
-                var circulation = supply - teamAmt;
+                var circulation = supply - teamAmt - xb5b9Amt - uniswapRfiAmt - uniswapEthAmt;
 
                 var item = new Stat
                 {
@@ -121,8 +124,19 @@ namespace dm.YLD.Stats
                 await GetSupply(client);
                 await Task.Delay(200);
                 await GetTeamAmount(client);
+                await Task.Delay(200);
+                await Getxb5b9Amount(client);
+                await Task.Delay(200);
+                await GetUniswapRFIAmount(client);
+                await Task.Delay(200);
+                await GetUniswapETHAmount(client);
 
-                while (teamAmt == 0 || supply == 0 || esTxs == null)
+                while (uniswapEthAmt == 0 ||
+                    uniswapRfiAmt == 0 ||
+                    xb5b9Amt == 0 ||
+                    teamAmt == 0 ||
+                    supply == 0 ||
+                    esTxs == null)
                     await Task.Delay(200);
 
                 client = null;
@@ -161,6 +175,54 @@ namespace dm.YLD.Stats
             var res = await client.ExecuteAsync<EsToken>(req);
             teamAmt = BigInteger.Parse(res.Data.Result);
             log.Info($"GetTeamAmount: OK ({teamAmt})");
+        }
+
+        private async Task Getxb5b9Amount(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "account");
+            req.AddParameter("action", "tokenbalance");
+            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
+            req.AddParameter("address", "0xb5b93f7396af7e85353d9C4d900Ccbdbdac6a658");
+            req.AddParameter("tag", "latest");
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            xb5b9Amt = BigInteger.Parse(res.Data.Result);
+            log.Info($"Get0xb5b9Amount: OK ({xb5b9Amt})");
+        }
+
+        private async Task GetUniswapRFIAmount(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "account");
+            req.AddParameter("action", "tokenbalance");
+            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
+            req.AddParameter("address", "0x901380ab7b9e8a0ecfb14bd5219e4a7d762c656d");
+            req.AddParameter("tag", "latest");
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            uniswapRfiAmt = BigInteger.Parse(res.Data.Result);
+            log.Info($"GetUniswapRFIAmount: OK ({uniswapRfiAmt})");
+        }
+
+        private async Task GetUniswapETHAmount(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "account");
+            req.AddParameter("action", "tokenbalance");
+            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
+            req.AddParameter("address", "0x242d289b3eeb6842ce0fcc0d87932402299ae5b3");
+            req.AddParameter("tag", "latest");
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            uniswapEthAmt = BigInteger.Parse(res.Data.Result);
+            log.Info($"GetUniswapETHAmount: OK ({uniswapEthAmt})");
         }
 
         private async Task GetTxs(RestClient client)
@@ -273,7 +335,9 @@ namespace dm.YLD.Stats
             db.AddRange(holders.Where(x => x.Value != "0" &&
                 !x.Value.Contains('-') &&
                 x.Address != "0x1e580e3ced413ce93028b3fe5cfce973e93e7ec8" &&
-                x.Address != "0xb5b93f7396af7e85353d9c4d900ccbdbdac6a658"));
+                x.Address != "0xb5b93f7396af7e85353d9c4d900ccbdbdac6a658" &&
+                x.Address != "0x901380ab7b9e8a0ecfb14bd5219e4a7d762c656d" &&
+                x.Address != "0x242d289b3eeb6842ce0fcc0d87932402299ae5b3"));
             await db.SaveChangesAsync();
         }
     }

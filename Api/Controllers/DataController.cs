@@ -25,7 +25,7 @@ namespace dm.YLD.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<Stats>> Get()
         {
-            return await Data.Common.GetStats(db);
+            return await Data.Common.GetStatsAndPrices(db);
         }
     }
 }

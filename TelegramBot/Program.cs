@@ -133,34 +133,30 @@ namespace dm.YLD.TelegramBot
 
         private async Task<string> GetCmdReply(string cmd, string args)
         {
-            string reply = string.Empty;
-
             switch (cmd)
             {
                 case "price":
                     var price = await Data.Common.GetPrices(db);
-                    reply = $"$ <b>{price.PriceUSD.FormatUsd()}</b>\n" +
+                    return $"$ <b>{price.PriceUSD.FormatUsd()}</b>\n" +
                         $"₿ <b>{price.PriceBTC.FormatBtc()}</b>\n" +
                         $"Ξ <b>{price.PriceETH.FormatEth()}</b>";
-                    break;
 
                 case "supply":
-                    var supply = await Data.Common.GetStats(db);
-                    reply = $"Supply: <b>{supply.Stat.Supply.FormatYld()}</b> $YLD\n" +
+                    var supply = await Data.Common.GetStatsAndPrices(db);
+                    return $"Supply: <b>{supply.Stat.Supply.FormatYld()}</b> $YLD\n" +
                         $"Circulation: <b>{supply.Stat.Circulation.FormatYld()}</b> $YLD";
-                    break;
 
                 case "mcap":
                     var mcap = await Data.Common.GetPrices(db);
-                    reply = $"Market Cap: $ <b>{mcap.MarketCapUSD.FormatLarge()}</b>\n" +
+                    return $"Market Cap: $ <b>{mcap.MarketCapUSD.FormatLarge()}</b>\n" +
                         $"Volume (24h): $ <b>{mcap.VolumeUSD.FormatLarge()}</b>";
-                    break;
 
                 case "top":
                     if (!int.TryParse(args, out int topAmt))
                         topAmt = 10;
 
                     var tops = await Data.Common.GetTop(db, topAmt);
+                    string reply = string.Empty;
                     for (int i = 0; i < topAmt; i++)
                     {
                         var item = tops[i];
@@ -170,22 +166,49 @@ namespace dm.YLD.TelegramBot
                         var shortAddr = item.Address.Substring(0, 10);
                         reply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatYld()}</b>\n";
                     }
-                    break;
+                    return reply;
+
+                case "holders":
+                    var holders = await Data.Common.GetHolders(db);
+                    return $"<b>{holders.Format()}</b> total holders";
 
                 case "share":
-                    if (int.TryParse(args, out int yldAmt))
+                case "tshare":
+                    if (decimal.TryParse(args.Replace(",", string.Empty), out decimal yldAmt))
                     {
-                        // get by amt
+                        if (yldAmt <= 0)
+                            return "Amount must be greater than 0.";
+
+                        var tstats = await Data.Common.GetStats(db);
+
+                        if (yldAmt > tstats.Circulation)
+                            return $"Amount must be less than the total circulation ({tstats.Circulation.FormatYld()})";
+                        
+                        var pct = yldAmt / tstats.Circulation * 100;
+                        return $"<b>{pct.FormatEth()}%</b>\n" +
+                            $"<i>({yldAmt} ÷ {tstats.Circulation.FormatYld()})</i>";
                     }
                     else if (args.Contains('%') &&
-                        decimal.TryParse(args.TrimEnd('%', ' '), out decimal yldPct))
+                        decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal yldPct))
                     {
-                        // get by pct
+                        if (yldPct <= 0 || yldPct >= 100)
+                            return "Percentage must be greater than 0 and less than 100.";
+
+                        var tstats = await Data.Common.GetStats(db);
+                        var amt = yldPct / 100 * tstats.Circulation;
+                        return $"<b>{amt.FormatYld()}</b>\n" +
+                            $"<i>({yldPct}% × {tstats.Circulation.FormatYld()})</i>";
                     }
-                    break;
+
+                    return string.Empty;
+
+                case "rshare":
+                    return new NotImplementedException().Message;
+                case "eshare":
+                    return new NotImplementedException().Message;
             }
 
-            return reply;
+            return string.Empty;
         }
     }
 }
