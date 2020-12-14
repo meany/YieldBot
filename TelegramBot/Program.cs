@@ -117,6 +117,14 @@ namespace dm.YLD.TelegramBot
                 cmd = cmdAndArgs.Substring(0, firstSpace);
                 args = cmdAndArgs.Substring(firstSpace + 1).Trim();
             }
+            if (cmd.Contains('@'))
+                cmd = cmd.Split('@')[0];
+
+            if (e.Message.Date.AddMinutes(1) <= DateTime.UtcNow)
+            {
+                log.Info($"(old: ignoring) ChatId: {e.Message.Chat.Id}, Command: {cmd}, Args: {args}");
+                return;
+            }
 
             log.Info($"ChatId: {e.Message.Chat.Id}, Command: {cmd}, Args: {args}");
 
@@ -164,7 +172,7 @@ namespace dm.YLD.TelegramBot
 
                     var tops = await Data.Common.GetTopHolders(db, topAmt);
                     string reply = string.Empty;
-                    for (int i = 0; i < topAmt; i++)
+                    for (int i = 0; i < tops.Count; i++)
                     {
                         var item = tops[i];
                         var value = BigInteger.Parse(item.Value);
@@ -181,7 +189,7 @@ namespace dm.YLD.TelegramBot
 
                     var rtops = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, rtopAmt);
                     string rreply = string.Empty;
-                    for (int i = 0; i < rtopAmt; i++)
+                    for (int i = 0; i < rtops.Count; i++)
                     {
                         var item = rtops[i];
                         var value = BigInteger.Parse(item.Value);
@@ -198,7 +206,7 @@ namespace dm.YLD.TelegramBot
 
                     var etops = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, etopAmt);
                     string ereply = string.Empty;
-                    for (int i = 0; i < etopAmt; i++)
+                    for (int i = 0; i < etops.Count; i++)
                     {
                         var item = etops[i];
                         var value = BigInteger.Parse(item.Value);
@@ -219,18 +227,26 @@ namespace dm.YLD.TelegramBot
                         if (yldAmt <= 0)
                             return "Amount must be greater than 0.";
 
-                        var tstats = await Data.Common.GetTopHolders(db, 100);
-                        decimal ttotal = tstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+                        var tstats = await Data.Common.GetTopHolders(db, int.MaxValue);
+                        decimal ttotal = tstats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         if (yldAmt > ttotal)
-                            return $"Amount must be less than the holder circulation ({ttotal.FormatYld()})";
-                        
+                            return $"Amount must be less than the top 100 holder circulation ({ttotal.FormatYld()})";
+
                         decimal pct = yldAmt / ttotal * 100;
                         decimal airdrop = pct / 100 * 25000;
+                        
+                        var tlast = tstats.Take(100).Last();
+                        if (yldAmt <= tlast.ValueBigInt.ToEth())
+                            airdrop = 0;
+
+                        var position = tstats.Count(x => x.ValueBigInt.ToEth() >= yldAmt) + 1;
+
                         return $"<b>{pct.FormatEth()}%</b>\n" +
                             $"<i>({yldAmt} ÷ {ttotal.FormatYld()} $YLD)</i>\n" +
                             $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                            $"Position: #<b>{position}</b>";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal yldPct))
@@ -238,15 +254,22 @@ namespace dm.YLD.TelegramBot
                         if (yldPct <= 0 || yldPct >= 100)
                             return "Percentage must be greater than 0 and less than 100.";
 
-                        var tstats = await Data.Common.GetTopHolders(db, 100);
-                        decimal ttotal = tstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+                        var tstats = await Data.Common.GetTopHolders(db, int.MaxValue);
+                        decimal ttotal = tstats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         decimal amt = yldPct / 100 * ttotal;
                         decimal airdrop = yldPct / 100 * 25000;
+                        var tlast = tstats.Take(100).Last();
+                        if (amt <= tlast.ValueBigInt.ToEth())
+                            airdrop = 0;
+
+                        var position = tstats.Count(x => x.ValueBigInt.ToEth() >= amt) + 1;
+
                         return $"<b>{amt.FormatYld()}</b> $YLD\n" +
                             $"<i>({yldPct}% × {ttotal.FormatYld()} $YLD)</i>\n" +
                             $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                            $"Position: #<b>{position}</b>";
                     }
 
                     return string.Empty;
@@ -257,18 +280,26 @@ namespace dm.YLD.TelegramBot
                         if (rAmt <= 0)
                             return "Amount must be greater than 0.";
 
-                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, 100);
-                        decimal rtotal = rstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, int.MaxValue);
+                        decimal rtotal = rstats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         if (rAmt > rtotal)
-                            return $"Amount must be less than the RFI-YLD supply ({rtotal.FormatEth()})";
+                            return $"Amount must be less than the top 100 RFI-YLD supply ({rtotal.FormatEth()})";
 
                         decimal pct = rAmt / rtotal * 100;
                         decimal airdrop = pct / 100 * 13500;
+
+                        var rlast = rstats.Take(100).Last();
+                        if (rAmt <= rlast.ValueBigInt.ToEth())
+                            airdrop = 0;
+
+                        var position = rstats.Count(x => x.ValueBigInt.ToEth() >= rAmt) + 1;
+
                         return $"<b>{pct.FormatEth()}%</b>\n" +
                             $"<i>({rAmt} ÷ {rtotal.FormatEth()} RFI-YLD)</i>\n" +
                             $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                            $"Position: #<b>{position}</b>";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal rPct))
@@ -276,15 +307,23 @@ namespace dm.YLD.TelegramBot
                         if (rPct <= 0 || rPct >= 100)
                             return "Percentage must be greater than 0 and less than 100.";
 
-                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, 100);
-                        decimal rtotal = rstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, int.MaxValue);
+                        decimal rtotal = rstats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         decimal amt = rPct / 100 * rtotal;
                         decimal airdrop = rPct / 100 * 13500;
+
+                        var rlast = rstats.Take(100).Last();
+                        if (amt <= rlast.ValueBigInt.ToEth())
+                            airdrop = 0;
+
+                        var position = rstats.Count(x => x.ValueBigInt.ToEth() >= amt) + 1;
+
                         return $"<b>{amt.FormatEth()}</b> RFI-YLD\n" +
                             $"<i>({rPct}% × {rtotal.FormatEth()} RFI-YLD)</i>\n" +
                             $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                            $"Position: #<b>{position}</b>";
                     }
 
                     return string.Empty;
@@ -295,18 +334,26 @@ namespace dm.YLD.TelegramBot
                         if (eAmt <= 0)
                             return "Amount must be greater than 0.";
 
-                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, 100);
-                        decimal etotal = estats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, int.MaxValue);
+                        decimal etotal = estats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         if (eAmt > etotal)
-                            return $"Amount must be less than the ETH-YLD supply ({etotal.FormatEth()})";
+                            return $"Amount must be less than the top 100 ETH-YLD supply ({etotal.FormatEth()})";
 
                         decimal pct = eAmt / etotal * 100;
                         decimal airdrop = pct / 100 * 11500;
+
+                        var elast = estats.Take(100).Last();
+                        if (eAmt <= elast.ValueBigInt.ToEth())
+                            airdrop = 0;
+
+                        var position = estats.Count(x => x.ValueBigInt.ToEth() >= eAmt) + 1;
+
                         return $"<b>{pct.FormatEth()}%</b>\n" +
                             $"<i>({eAmt} ÷ {etotal.FormatEth()} ETH-YLD)</i>\n" +
                             $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                            $"Position: #<b>{position}</b>";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal ePct))
@@ -314,15 +361,23 @@ namespace dm.YLD.TelegramBot
                         if (ePct <= 0 || ePct >= 100)
                             return "Percentage must be greater than 0 and less than 100.";
 
-                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, 100);
-                        decimal etotal = estats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, int.MaxValue);
+                        decimal etotal = estats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         decimal amt = ePct / 100 * etotal;
                         decimal airdrop = ePct / 100 * 11500;
+
+                        var elast = estats.Take(100).Last();
+                        if (amt <= elast.ValueBigInt.ToEth())
+                            airdrop = 0;
+
+                        var position = estats.Count(x => x.ValueBigInt.ToEth() >= amt) + 1;
+
                         return $"<b>{amt.FormatEth()}</b> ETH-YLD\n" +
                             $"<i>({ePct}% × {etotal.FormatEth()} ETH-YLD)</i>\n" +
                             $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                            $"Position: #<b>{position}</b>";
                     }
 
                     return string.Empty;
