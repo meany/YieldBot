@@ -8,6 +8,58 @@ namespace dm.YLD.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Holders",
+                columns: table => new
+                {
+                    HolderId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Value = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    FirstBlockNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FirstTimeStamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Holders", x => x.HolderId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LPHolders",
+                columns: table => new
+                {
+                    LPHolderId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Pair = table.Column<int>(type: "int", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Value = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    FirstBlockNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FirstTimeStamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LPHolders", x => x.LPHolderId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LPTransactions",
+                columns: table => new
+                {
+                    LPTransactionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BlockNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TimeStamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Hash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    From = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    To = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Pair = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LPTransactions", x => x.LPTransactionId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Prices",
                 columns: table => new
                 {
@@ -63,7 +115,10 @@ namespace dm.YLD.Data.Migrations
                     Group = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Transactions = table.Column<int>(type: "int", nullable: false),
                     Supply = table.Column<decimal>(type: "decimal(25,18)", nullable: false),
-                    Circulation = table.Column<decimal>(type: "decimal(25,18)", nullable: false)
+                    FullCirculation = table.Column<decimal>(type: "decimal(25,18)", nullable: false),
+                    HolderCirculation = table.Column<decimal>(type: "decimal(25,18)", nullable: false),
+                    UniswapRFISupply = table.Column<decimal>(type: "decimal(25,18)", nullable: false),
+                    UniswapETHSupply = table.Column<decimal>(type: "decimal(25,18)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -87,6 +142,31 @@ namespace dm.YLD.Data.Migrations
                 {
                     table.PrimaryKey("PK_Transactions", x => x.TransactionId);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Holders_Value",
+                table: "Holders",
+                column: "Value");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LPHolders_Pair",
+                table: "LPHolders",
+                column: "Pair");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LPHolders_Value",
+                table: "LPHolders",
+                column: "Value");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LPTransactions_Pair",
+                table: "LPTransactions",
+                column: "Pair");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LPTransactions_TimeStamp",
+                table: "LPTransactions",
+                column: "TimeStamp");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Prices_Date",
@@ -121,6 +201,15 @@ namespace dm.YLD.Data.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Holders");
+
+            migrationBuilder.DropTable(
+                name: "LPHolders");
+
+            migrationBuilder.DropTable(
+                name: "LPTransactions");
+
             migrationBuilder.DropTable(
                 name: "Prices");
 

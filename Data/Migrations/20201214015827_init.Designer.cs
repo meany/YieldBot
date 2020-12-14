@@ -10,8 +10,8 @@ using dm.YLD.Data;
 namespace dm.YLD.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20201213195853_lpholders")]
-    partial class lpholders
+    [Migration("20201214015827_init")]
+    partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -76,6 +76,43 @@ namespace dm.YLD.Data.Migrations
                     b.HasIndex("Value");
 
                     b.ToTable("LPHolders");
+                });
+
+            modelBuilder.Entity("dm.YLD.Data.Models.LPTransaction", b =>
+                {
+                    b.Property<int>("LPTransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .UseIdentityColumn();
+
+                    b.Property<string>("BlockNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("From")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Hash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Pair")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("TimeStamp")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("To")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("LPTransactionId");
+
+                    b.HasIndex("Pair");
+
+                    b.HasIndex("TimeStamp");
+
+                    b.ToTable("LPTransactions");
                 });
 
             modelBuilder.Entity("dm.YLD.Data.Models.Price", b =>
@@ -200,6 +237,12 @@ namespace dm.YLD.Data.Migrations
 
                     b.Property<int>("Transactions")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("UniswapETHSupply")
+                        .HasColumnType("decimal(25,18)");
+
+                    b.Property<decimal>("UniswapRFISupply")
+                        .HasColumnType("decimal(25,18)");
 
                     b.HasKey("StatId");
 
