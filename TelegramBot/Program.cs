@@ -25,6 +25,7 @@ namespace dm.YLD.TelegramBot
         private IConfigurationRoot configuration;
         private Config config;
         private AppDbContext db;
+        private string cmdList;
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
         public static void Main(string[] args)
@@ -53,6 +54,8 @@ namespace dm.YLD.TelegramBot
                     log.Info("Migrating database");
                     db.Database.Migrate();
                 }
+
+                cmdList = File.ReadAllText("cmds.txt");
 
                 await RunBot(args);
             }
@@ -136,6 +139,9 @@ namespace dm.YLD.TelegramBot
         {
             switch (cmd)
             {
+                case "start":
+                    return cmdList;
+
                 case "price":
                     var price = await Data.Common.GetPrices(db);
                     return $"$ <b>{price.PriceUSD.FormatUsd()}</b>\n" +
@@ -153,7 +159,6 @@ namespace dm.YLD.TelegramBot
                         $"Volume (24h): $ <b>{mcap.VolumeUSD.FormatLarge()}</b>";
 
                 case "top":
-                case "ttop":
                     if (!int.TryParse(args, out int topAmt))
                         topAmt = 10;
 
@@ -209,7 +214,6 @@ namespace dm.YLD.TelegramBot
                     return $"<b>{holders.Format()}</b> total $YLD holders";
 
                 case "share":
-                case "tshare":
                     if (decimal.TryParse(args.Replace(",", string.Empty), out decimal yldAmt))
                     {
                         if (yldAmt <= 0)

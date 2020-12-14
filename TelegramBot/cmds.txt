@@ -1,12 +1,15 @@
-share - Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
-tshare - (alias of share) Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
-rshare - RFI liquidity provider: Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
-eshare - ETH liquidity provider: Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
-price - Current price
-supply - Current supply and circulation
-mcap - Current market cap and 24h volume
-top - Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
-ttop - (alias of top) Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
-rtop - Displays the top 10 RFI-YLD LP holders, or provide a number (i.e. "100" would get the top 100 RFI-YLD LP holders)
-etop - Displays the top 10 ETH-YLD LP holders, or provide a number (i.e. "100" would get the top 100 ETH-YLD LP holders)
-holders - Get the current total number of holders
+<b><u>YLD Info:</u></b>
+<b>/price</b> - Current price
+<b>/supply</b> - Current supply and circulation
+<b>/mcap</b> - Current market cap and 24h volume
+<b>/holders</b> - Get the current total number of holders
+
+<b><u>Top Holders:</u></b>
+<b>/top</b> - Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
+<b>/rtop</b> - Displays the top 10 RFI-YLD liquidity provider holders, or provide a number (i.e. "100" would get the top 100 RFI-YLD LP holders)
+<b>/etop</b> - Displays the top 10 ETH-YLD liquidity provider holders, or provide a number (i.e. "100" would get the top 100 ETH-YLD LP holders)
+
+<b><u>Share Amounts:</u></b>
+<b>/share</b> - Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
+<b>/rshare</b> - RFI liquidity provider: Provide a number of RFI-YLD (i.e. "5"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of RFI-YLD
+<b>/eshare</b> - ETH liquidity provider: Provide a number of ETH-YLD (i.e. "0.1"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of ETH-YLD
