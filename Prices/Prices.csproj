@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>dm.YLD.Prices</RootNamespace>
-    <AssemblyName>prices</AssemblyName>
+    <AssemblyName>yldprices</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
