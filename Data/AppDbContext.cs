@@ -9,10 +9,12 @@ namespace dm.YLD.Data
     public class AppDbContext : DbContext
     {
         public DbSet<Holder> Holders { get; set; }
+        public DbSet<LPHolder> LPHolders { get; set; }
         public DbSet<Price> Prices { get; set; }
         public DbSet<Request> Requests { get; set; }
         public DbSet<Stat> Stats { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<LPTransaction> LPTransactions { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -22,6 +24,10 @@ namespace dm.YLD.Data
         {
             modelBuilder.Entity<Holder>()
                 .HasIndex(x => x.Value);
+            modelBuilder.Entity<LPHolder>()
+                .HasIndex(x => x.Value);
+            modelBuilder.Entity<LPHolder>()
+                .HasIndex(x => x.Pair);
             modelBuilder.Entity<Price>()
                 .HasIndex(x => x.Group);
             modelBuilder.Entity<Price>()
@@ -34,6 +40,10 @@ namespace dm.YLD.Data
                 .HasIndex(x => x.Date);
             modelBuilder.Entity<Transaction>()
                 .HasIndex(x => x.TimeStamp);
+            modelBuilder.Entity<LPTransaction>()
+                .HasIndex(x => x.TimeStamp);
+            modelBuilder.Entity<LPTransaction>()
+                .HasIndex(x => x.Pair);
         }
     }
 

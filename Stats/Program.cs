@@ -34,9 +34,15 @@ namespace dm.YLD.Stats
         private BigInteger teamAmt;
         private BigInteger xb5b9Amt;
         private BigInteger uniswapRfiAmt;
+        private BigInteger uniswapRfiSupply;
+        private BigInteger firstRfiAmt;
         private BigInteger uniswapEthAmt;
+        private BigInteger uniswapEthSupply;
+        private BigInteger firstEthAmt;
         private List<EsTxsResult> esTxs;
         private List<Transaction> dbTxs;
+        private List<EsTxsResult> esLpTxs;
+        private List<LPTransaction> dbLpTxs;
 
         public static void Main(string[] args)
             => new Program().MainAsync(args).GetAwaiter().GetResult();
@@ -80,6 +86,7 @@ namespace dm.YLD.Stats
                 log.Info("Getting Etherscan info");
                 await GetInfo();
                 await InsertNewTxs();
+                await InsertNewLpTxs();
 
                 dbTxs = db.Transactions
                     .AsNoTracking()
@@ -87,14 +94,20 @@ namespace dm.YLD.Stats
                     .ToList();
                 int totalTxs = (dbTxs.Count - 1) / 2;
 
-                var circulation = supply - teamAmt - xb5b9Amt - uniswapRfiAmt - uniswapEthAmt;
+                var fullCirculation = supply - teamAmt;
+                var holderCirculation = fullCirculation - xb5b9Amt - uniswapRfiAmt - uniswapEthAmt;
+                var rfiSupply = uniswapRfiSupply - firstRfiAmt;
+                var ethSupply = uniswapEthSupply - firstEthAmt;
 
                 var item = new Stat
                 {
-                    Circulation = circulation.ToEth(),
+                    FullCirculation = fullCirculation.ToEth(),
+                    HolderCirculation = holderCirculation.ToEth(),
                     Date = DateTime.UtcNow,
                     Group = Guid.NewGuid(),
                     Supply = supply.ToEth(),
+                    UniswapRFISupply = rfiSupply.ToEth(),
+                    UniswapETHSupply = ethSupply.ToEth(),
                     Transactions = totalTxs
                 };
 
@@ -107,6 +120,13 @@ namespace dm.YLD.Stats
 
                 log.Info("Building holders table");
                 await BuildHolders();
+
+                log.Info("Building LP holders table");
+                dbLpTxs = db.LPTransactions
+                    .AsNoTracking()
+                    .OrderBy(x => x.TimeStamp)
+                    .ToList();
+                await BuildLPHolders();
             }
             catch (Exception ex)
             {
@@ -121,6 +141,8 @@ namespace dm.YLD.Stats
                 var client = new RestClient("https://api.etherscan.io");
                 await GetTxs(client);
                 await Task.Delay(200);
+                await GetLpTxs(client);
+                await Task.Delay(200);
                 await GetSupply(client);
                 await Task.Delay(200);
                 await GetTeamAmount(client);
@@ -129,13 +151,26 @@ namespace dm.YLD.Stats
                 await Task.Delay(200);
                 await GetUniswapRFIAmount(client);
                 await Task.Delay(200);
+                await GetUniswapRFISupply(client);
+                await Task.Delay(200);
+                await GetUniswapRFIFirstAmt(client);
+                await Task.Delay(200);
                 await GetUniswapETHAmount(client);
+                await Task.Delay(200);
+                await GetUniswapETHSupply(client);
+                await Task.Delay(200);
+                await GetUniswapETHFirstAmt(client);
 
-                while (uniswapEthAmt == 0 ||
+                while (uniswapEthSupply == 0 ||
+                    firstEthAmt == 0 ||
+                    uniswapEthAmt == 0 ||
+                    uniswapRfiSupply == 0 ||
+                    firstRfiAmt == 0 ||
                     uniswapRfiAmt == 0 ||
                     xb5b9Amt == 0 ||
                     teamAmt == 0 ||
                     supply == 0 ||
+                    esLpTxs == null ||
                     esTxs == null)
                     await Task.Delay(200);
 
@@ -153,12 +188,72 @@ namespace dm.YLD.Stats
             req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             req.AddParameter("module", "stats");
             req.AddParameter("action", "tokensupply");
-            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
+            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
             req.AddParameter("apikey", config.EtherscanToken);
 
             var res = await client.ExecuteAsync<EsToken>(req);
             supply = BigInteger.Parse(res.Data.Result);
             log.Info($"GetSupply: OK ({supply})");
+        }
+
+        private async Task GetUniswapRFISupply(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "stats");
+            req.AddParameter("action", "tokensupply");
+            req.AddParameter("contractaddress", Statics.TOKEN_UNISWAP_RFI);
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            uniswapRfiSupply = BigInteger.Parse(res.Data.Result);
+            log.Info($"GetUniswapRFISupply: OK ({uniswapRfiSupply})");
+        }
+
+        private async Task GetUniswapRFIFirstAmt(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "account");
+            req.AddParameter("action", "tokenbalance");
+            req.AddParameter("contractaddress", Statics.TOKEN_UNISWAP_RFI);
+            req.AddParameter("address", Statics.ADDRESS_FIRST_RFI);
+            req.AddParameter("tag", "latest");
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            firstRfiAmt = BigInteger.Parse(res.Data.Result);
+            log.Info($"GetUniswapRFIFirstAmt: OK ({firstRfiAmt})");
+        }
+
+        private async Task GetUniswapETHSupply(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "stats");
+            req.AddParameter("action", "tokensupply");
+            req.AddParameter("contractaddress", Statics.TOKEN_UNISWAP_ETH);
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            uniswapEthSupply = BigInteger.Parse(res.Data.Result);
+            log.Info($"GetUniswapRFISupply: OK ({uniswapEthSupply})");
+        }
+
+        private async Task GetUniswapETHFirstAmt(RestClient client)
+        {
+            var req = new RestRequest("api", Method.GET);
+            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req.AddParameter("module", "account");
+            req.AddParameter("action", "tokenbalance");
+            req.AddParameter("contractaddress", Statics.TOKEN_UNISWAP_ETH);
+            req.AddParameter("address", Statics.ADDRESS_FIRST);
+            req.AddParameter("tag", "latest");
+            req.AddParameter("apikey", config.EtherscanToken);
+
+            var res = await client.ExecuteAsync<EsToken>(req);
+            firstEthAmt = BigInteger.Parse(res.Data.Result);
+            log.Info($"GetUniswapETHFirstAmt: OK ({firstEthAmt})");
         }
 
         private async Task GetTeamAmount(RestClient client)
@@ -167,8 +262,8 @@ namespace dm.YLD.Stats
             req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             req.AddParameter("module", "account");
             req.AddParameter("action", "tokenbalance");
-            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
-            req.AddParameter("address", "0x1E580e3Ced413ce93028B3FE5cfCe973e93E7EC8");
+            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
+            req.AddParameter("address", Statics.ADDRESS_FIRST);
             req.AddParameter("tag", "latest");
             req.AddParameter("apikey", config.EtherscanToken);
 
@@ -183,8 +278,8 @@ namespace dm.YLD.Stats
             req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             req.AddParameter("module", "account");
             req.AddParameter("action", "tokenbalance");
-            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
-            req.AddParameter("address", "0xb5b93f7396af7e85353d9C4d900Ccbdbdac6a658");
+            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
+            req.AddParameter("address", Statics.ADDRESS_COINER);
             req.AddParameter("tag", "latest");
             req.AddParameter("apikey", config.EtherscanToken);
 
@@ -199,8 +294,8 @@ namespace dm.YLD.Stats
             req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             req.AddParameter("module", "account");
             req.AddParameter("action", "tokenbalance");
-            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
-            req.AddParameter("address", "0x901380ab7b9e8a0ecfb14bd5219e4a7d762c656d");
+            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
+            req.AddParameter("address", Statics.TOKEN_UNISWAP_RFI);
             req.AddParameter("tag", "latest");
             req.AddParameter("apikey", config.EtherscanToken);
 
@@ -215,8 +310,8 @@ namespace dm.YLD.Stats
             req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             req.AddParameter("module", "account");
             req.AddParameter("action", "tokenbalance");
-            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
-            req.AddParameter("address", "0x242d289b3eeb6842ce0fcc0d87932402299ae5b3");
+            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
+            req.AddParameter("address", Statics.TOKEN_UNISWAP_ETH);
             req.AddParameter("tag", "latest");
             req.AddParameter("apikey", config.EtherscanToken);
 
@@ -240,7 +335,7 @@ namespace dm.YLD.Stats
             req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             req.AddParameter("module", "account");
             req.AddParameter("action", "tokentx");
-            req.AddParameter("contractaddress", "0xDcB01cc464238396E213a6fDd933E36796eAfF9f");
+            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
             req.AddParameter("startblock", start);
             req.AddParameter("endblock", "999999999");
             req.AddParameter("apikey", config.EtherscanToken);
@@ -259,6 +354,52 @@ namespace dm.YLD.Stats
             log.Info($"GetTxs: {res.Data.Message} ({esTxs.Count()}: {start} to {esTxs.Last().BlockNumber})");
         }
 
+        private async Task GetLpTxs(RestClient client)
+        {
+            var lastTx = db.LPTransactions
+                .AsNoTracking()
+                .OrderByDescending(x => x.TimeStamp)
+                .FirstOrDefault();
+
+            int start = 0;
+            if (lastTx != null)
+                start = int.Parse(lastTx.BlockNumber) + 1;
+
+            var req1 = new RestRequest("api", Method.GET);
+            req1.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req1.AddParameter("module", "account");
+            req1.AddParameter("action", "tokentx");
+            req1.AddParameter("contractaddress", Statics.TOKEN_UNISWAP_RFI);
+            req1.AddParameter("startblock", start);
+            req1.AddParameter("endblock", "999999999");
+            req1.AddParameter("apikey", config.EtherscanToken);
+
+            var res1 = await client.ExecuteAsync<EsTxs>(req1);
+            
+            var req2 = new RestRequest("api", Method.GET);
+            req2.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            req2.AddParameter("module", "account");
+            req2.AddParameter("action", "tokentx");
+            req2.AddParameter("contractaddress", Statics.TOKEN_UNISWAP_ETH);
+            req2.AddParameter("startblock", start);
+            req2.AddParameter("endblock", "999999999");
+            req2.AddParameter("apikey", config.EtherscanToken);
+
+            var res2 = await client.ExecuteAsync<EsTxs>(req2);
+
+            var res = res1.Data.Result.Concat(res2.Data.Result).ToList();
+
+            if (res.Count == 0)
+            {
+                esLpTxs = new List<EsTxsResult>();
+                log.Info($"GetLpTxs: 0");
+                return;
+            }
+
+            esLpTxs = res.OrderBy(x => x.BlockNumber).ToList();
+            log.Info($"GetLpTxs: {esLpTxs.Count()}: {start} to {esLpTxs.Last().BlockNumber}");
+        }
+
         private async Task InsertNewTxs()
         {
             if (esTxs.Count > 0)
@@ -272,6 +413,33 @@ namespace dm.YLD.Stats
                         Hash = tx.Hash,
                         From = tx.From,
                         To = tx.To,
+                        TimeStamp = tx.TimeStamp,
+                        Value = tx.Value
+                    };
+                    db.Add(newTx);
+                }
+                await db.SaveChangesAsync();
+            }
+        }
+
+        private async Task InsertNewLpTxs()
+        {
+            if (esLpTxs.Count > 0)
+            {
+                log.Info("Inserting newest LP transactions");
+                foreach (var tx in esLpTxs)
+                {
+                    if (tx.From == tx.To)
+                        continue;
+
+                    var pair = Utils.GetLPPair(tx.ContractAddress);
+                    var newTx = new LPTransaction
+                    {
+                        BlockNumber = tx.BlockNumber,
+                        Hash = tx.Hash,
+                        From = tx.From,
+                        To = tx.To,
+                        Pair = pair,
                         TimeStamp = tx.TimeStamp,
                         Value = tx.Value
                     };
@@ -327,17 +495,71 @@ namespace dm.YLD.Stats
 
             await db.TruncateAsync<Holder>();
 
-            // filter out:
-            // - non-holders
-            // - the 0x0000... acct
-            // - the 0x1e58... (first acct)
-            // - the 0xb5b9... (coiner req acct)
             db.AddRange(holders.Where(x => x.Value != "0" &&
                 !x.Value.Contains('-') &&
-                x.Address != "0x1e580e3ced413ce93028b3fe5cfce973e93e7ec8" &&
-                x.Address != "0xb5b93f7396af7e85353d9c4d900ccbdbdac6a658" &&
-                x.Address != "0x901380ab7b9e8a0ecfb14bd5219e4a7d762c656d" &&
-                x.Address != "0x242d289b3eeb6842ce0fcc0d87932402299ae5b3"));
+                x.Address != Statics.ADDRESS_FIRST &&
+                x.Address != Statics.ADDRESS_COINER &&
+                x.Address != Statics.ADDRESS_FIRST_RFI &&
+                x.Address != Statics.TOKEN_UNISWAP_RFI &&
+                x.Address != Statics.TOKEN_UNISWAP_ETH));
+            await db.SaveChangesAsync();
+        }
+
+        private async Task BuildLPHolders()
+        {
+            var holders = new List<LPHolder>();
+
+            foreach (var item in dbLpTxs)
+            {
+                if (item.From == item.To)
+                    continue;
+
+                var fromHolder = holders.Where(x => x.Address == item.From && x.Pair == item.Pair).FirstOrDefault();
+                if (fromHolder != null)
+                {
+                    var newValue = BigInteger.Parse(fromHolder.Value) - BigInteger.Parse(item.Value);
+                    fromHolder.Value = newValue.ToString();
+                }
+                else
+                {
+                    holders.Add(new LPHolder
+                    {
+                        Address = item.From,
+                        Pair = item.Pair,
+                        FirstBlockNumber = item.BlockNumber,
+                        FirstTimeStamp = item.TimeStamp,
+                        Value = $"-{item.Value}"
+                    });
+                }
+
+                var toHolder = holders.Where(x => x.Address == item.To && x.Pair == item.Pair).FirstOrDefault();
+                if (toHolder != null)
+                {
+                    var newValue = BigInteger.Parse(toHolder.Value) + BigInteger.Parse(item.Value);
+                    toHolder.Value = newValue.ToString();
+                }
+                else
+                {
+                    holders.Add(new LPHolder
+                    {
+                        Address = item.To,
+                        Pair = item.Pair,
+                        FirstBlockNumber = item.BlockNumber,
+                        FirstTimeStamp = item.TimeStamp,
+                        Value = item.Value
+                    });
+                }
+            }
+
+            await db.TruncateAsync<LPHolder>();
+
+            db.AddRange(holders.Where(x => x.Value != "0" &&
+                !x.Value.Contains('-') &&
+                x.Address != Statics.ADDRESS_FIRST &&
+                x.Address != Statics.ADDRESS_COINER &&
+                x.Address != Statics.ADDRESS_FIRST_RFI &&
+                x.Address != Statics.TOKEN_UNISWAP_RFI &&
+                x.Address != Statics.TOKEN_UNISWAP_ETH));
             await db.SaveChangesAsync();
         }
     }

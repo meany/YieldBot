@@ -6,10 +6,17 @@ using System.Text.Json.Serialization;
 
 namespace dm.YLD.Data.Models
 {
-    public class Holder
+    public enum LPPair
+    {
+        RFI_YLD = 0,
+        ETH_YLD = 1
+    }
+
+    public class LPHolder
     {
         [JsonIgnore]
-        public int HolderId { get; set; }
+        public int LPHolderId { get; set; }
+        public LPPair Pair { get; set; }
         public string Address { get; set; }
         public string Value { get; set; }
         public string FirstBlockNumber { get; set; }

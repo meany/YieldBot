@@ -6,4 +6,7 @@ price - Current price
 supply - Current supply and circulation
 mcap - Current market cap and 24h volume
 top - Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
+ttop - (alias of top) Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
+rtop - Displays the top 10 RFI-YLD LP holders, or provide a number (i.e. "100" would get the top 100 RFI-YLD LP holders)
+etop - Displays the top 10 ETH-YLD LP holders, or provide a number (i.e. "100" would get the top 100 ETH-YLD LP holders)
 holders - Get the current total number of holders

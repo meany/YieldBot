@@ -11,11 +11,14 @@ namespace dm.YLD.Data
 {
     public static class Common
     {
-        public static async Task<ViewModels.Stats> GetStatsAndPrices(AppDbContext db)
+        public static async Task<ViewModels.AllInfo> GetAllInfo(AppDbContext db)
         {
-            var vm = new ViewModels.Stats();
+            var vm = new ViewModels.AllInfo();
             vm.Stat = await GetStats(db);
             vm.Price = await GetPrices(db, vm.Stat.Group);
+            vm.Holders = await GetTopHolders(db, 100);
+            vm.RFILiquidityHolders = await GetTopHolders(db, LPPair.RFI_YLD, 100);
+            vm.ETHLiquidityHolders = await GetTopHolders(db, LPPair.ETH_YLD, 100);
 
             if (vm.Price == null)
             {
@@ -33,7 +36,7 @@ namespace dm.YLD.Data
         {
             return await db.Prices
                 .AsNoTracking()
-                .Where(x => group != new Guid() && x.Group == group)
+                .Where(x => group == new Guid() || x.Group == group)
                 .OrderByDescending(x => x.Date)
                 .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
@@ -48,7 +51,7 @@ namespace dm.YLD.Data
                 .ConfigureAwait(false);
         }
 
-        public static async Task<List<Holder>> GetTop(AppDbContext db, int takeAmt)
+        public static async Task<List<Holder>> GetTopHolders(AppDbContext db, int takeAmt)
         {
             var items = await db.Holders
                 .AsNoTracking()
@@ -60,7 +63,20 @@ namespace dm.YLD.Data
                 .ToList();
         }
 
-        public static async Task<int> GetHolders(AppDbContext db)
+        public static async Task<List<LPHolder>> GetTopHolders(AppDbContext db, LPPair pair, int takeAmt)
+        {
+            var items = await db.LPHolders
+                .AsNoTracking()
+                .Where(x => x.Pair == pair)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return items.OrderByDescending(x => BigInteger.Parse(x.Value))
+                .Take(takeAmt)
+                .ToList();
+        }
+
+        public static async Task<int> GetTotalHolders(AppDbContext db)
         {
             return await db.Holders
                 .AsNoTracking()

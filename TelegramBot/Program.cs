@@ -1,5 +1,6 @@
 ﻿using dm.YLD.Common;
 using dm.YLD.Data;
+using dm.YLD.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -142,9 +143,9 @@ namespace dm.YLD.TelegramBot
                         $"Ξ <b>{price.PriceETH.FormatEth()}</b>";
 
                 case "supply":
-                    var supply = await Data.Common.GetStatsAndPrices(db);
-                    return $"Supply: <b>{supply.Stat.Supply.FormatYld()}</b> $YLD\n" +
-                        $"Circulation: <b>{supply.Stat.Circulation.FormatYld()}</b> $YLD";
+                    var supply = await Data.Common.GetStats(db);
+                    return $"Supply: <b>{supply.Supply.FormatYld()}</b> $YLD\n" +
+                        $"Circulation: <b>{supply.FullCirculation.FormatYld()}</b> $YLD";
 
                 case "mcap":
                     var mcap = await Data.Common.GetPrices(db);
@@ -152,25 +153,60 @@ namespace dm.YLD.TelegramBot
                         $"Volume (24h): $ <b>{mcap.VolumeUSD.FormatLarge()}</b>";
 
                 case "top":
+                case "ttop":
                     if (!int.TryParse(args, out int topAmt))
                         topAmt = 10;
 
-                    var tops = await Data.Common.GetTop(db, topAmt);
+                    var tops = await Data.Common.GetTopHolders(db, topAmt);
                     string reply = string.Empty;
                     for (int i = 0; i < topAmt; i++)
                     {
                         var item = tops[i];
                         var value = BigInteger.Parse(item.Value);
-                        var url = $"https://etherscan.io/token/0xdcb01cc464238396e213a6fdd933e36796eaff9f?a=" +
+                        var url = $"https://etherscan.io/token/{Statics.TOKEN_YLD}?a=" +
                             item.Address;
                         var shortAddr = item.Address.Substring(0, 10);
-                        reply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatYld()}</b>\n";
+                        reply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatYld()}</b> $YLD\n";
                     }
                     return reply;
 
+                case "rtop":
+                    if (!int.TryParse(args, out int rtopAmt))
+                        rtopAmt = 10;
+
+                    var rtops = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, rtopAmt);
+                    string rreply = string.Empty;
+                    for (int i = 0; i < rtopAmt; i++)
+                    {
+                        var item = rtops[i];
+                        var value = BigInteger.Parse(item.Value);
+                        var url = $"https://etherscan.io/token/{Statics.TOKEN_UNISWAP_RFI}?a=" +
+                            item.Address;
+                        var shortAddr = item.Address.Substring(0, 10);
+                        rreply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatEth()}</b> RFI-YLD\n";
+                    }
+                    return rreply;
+
+                case "etop":
+                    if (!int.TryParse(args, out int etopAmt))
+                        etopAmt = 10;
+
+                    var etops = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, etopAmt);
+                    string ereply = string.Empty;
+                    for (int i = 0; i < etopAmt; i++)
+                    {
+                        var item = etops[i];
+                        var value = BigInteger.Parse(item.Value);
+                        var url = $"https://etherscan.io/token/{Statics.TOKEN_UNISWAP_ETH}?a=" +
+                            item.Address;
+                        var shortAddr = item.Address.Substring(0, 10);
+                        ereply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatEth()}</b> ETH-YLD\n";
+                    }
+                    return ereply;
+
                 case "holders":
-                    var holders = await Data.Common.GetHolders(db);
-                    return $"<b>{holders.Format()}</b> total holders";
+                    var holders = await Data.Common.GetTotalHolders(db);
+                    return $"<b>{holders.Format()}</b> total $YLD holders";
 
                 case "share":
                 case "tshare":
@@ -179,14 +215,18 @@ namespace dm.YLD.TelegramBot
                         if (yldAmt <= 0)
                             return "Amount must be greater than 0.";
 
-                        var tstats = await Data.Common.GetStats(db);
+                        var tstats = await Data.Common.GetTopHolders(db, 100);
+                        decimal ttotal = tstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
-                        if (yldAmt > tstats.Circulation)
-                            return $"Amount must be less than the total circulation ({tstats.Circulation.FormatYld()})";
+                        if (yldAmt > ttotal)
+                            return $"Amount must be less than the holder circulation ({ttotal.FormatYld()})";
                         
-                        var pct = yldAmt / tstats.Circulation * 100;
+                        decimal pct = yldAmt / ttotal * 100;
+                        decimal airdrop = pct / 100 * 25000;
                         return $"<b>{pct.FormatEth()}%</b>\n" +
-                            $"<i>({yldAmt} ÷ {tstats.Circulation.FormatYld()})</i>";
+                            $"<i>({yldAmt} ÷ {ttotal.FormatYld()} $YLD)</i>\n" +
+                            $"\n" +
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal yldPct))
@@ -194,18 +234,94 @@ namespace dm.YLD.TelegramBot
                         if (yldPct <= 0 || yldPct >= 100)
                             return "Percentage must be greater than 0 and less than 100.";
 
-                        var tstats = await Data.Common.GetStats(db);
-                        var amt = yldPct / 100 * tstats.Circulation;
-                        return $"<b>{amt.FormatYld()}</b>\n" +
-                            $"<i>({yldPct}% × {tstats.Circulation.FormatYld()})</i>";
+                        var tstats = await Data.Common.GetTopHolders(db, 100);
+                        decimal ttotal = tstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+
+                        decimal amt = yldPct / 100 * ttotal;
+                        decimal airdrop = yldPct / 100 * 25000;
+                        return $"<b>{amt.FormatYld()}</b> $YLD\n" +
+                            $"<i>({yldPct}% × {ttotal.FormatYld()} $YLD)</i>\n" +
+                            $"\n" +
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
                     }
 
                     return string.Empty;
 
                 case "rshare":
-                    return new NotImplementedException().Message;
+                    if (decimal.TryParse(args.Replace(",", string.Empty), out decimal rAmt))
+                    {
+                        if (rAmt <= 0)
+                            return "Amount must be greater than 0.";
+
+                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, 100);
+                        decimal rtotal = rstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+
+                        if (rAmt > rtotal)
+                            return $"Amount must be less than the RFI-YLD supply ({rtotal.FormatEth()})";
+
+                        decimal pct = rAmt / rtotal * 100;
+                        decimal airdrop = pct / 100 * 13500;
+                        return $"<b>{pct.FormatEth()}%</b>\n" +
+                            $"<i>({rAmt} ÷ {rtotal.FormatEth()} RFI-YLD)</i>\n" +
+                            $"\n" +
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                    }
+                    else if (args.Contains('%') &&
+                        decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal rPct))
+                    {
+                        if (rPct <= 0 || rPct >= 100)
+                            return "Percentage must be greater than 0 and less than 100.";
+
+                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, 100);
+                        decimal rtotal = rstats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+
+                        decimal amt = rPct / 100 * rtotal;
+                        decimal airdrop = rPct / 100 * 13500;
+                        return $"<b>{amt.FormatEth()}</b> RFI-YLD\n" +
+                            $"<i>({rPct}% × {rtotal.FormatEth()} RFI-YLD)</i>\n" +
+                            $"\n" +
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                    }
+
+                    return string.Empty;
+
                 case "eshare":
-                    return new NotImplementedException().Message;
+                    if (decimal.TryParse(args.Replace(",", string.Empty), out decimal eAmt))
+                    {
+                        if (eAmt <= 0)
+                            return "Amount must be greater than 0.";
+
+                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, 100);
+                        decimal etotal = estats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+
+                        if (eAmt > etotal)
+                            return $"Amount must be less than the ETH-YLD supply ({etotal.FormatEth()})";
+
+                        decimal pct = eAmt / etotal * 100;
+                        decimal airdrop = pct / 100 * 11500;
+                        return $"<b>{pct.FormatEth()}%</b>\n" +
+                            $"<i>({eAmt} ÷ {etotal.FormatEth()} ETH-YLD)</i>\n" +
+                            $"\n" +
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                    }
+                    else if (args.Contains('%') &&
+                        decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal ePct))
+                    {
+                        if (ePct <= 0 || ePct >= 100)
+                            return "Percentage must be greater than 0 and less than 100.";
+
+                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, 100);
+                        decimal etotal = estats.Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
+
+                        decimal amt = ePct / 100 * etotal;
+                        decimal airdrop = ePct / 100 * 11500;
+                        return $"<b>{amt.FormatEth()}</b> ETH-YLD\n" +
+                            $"<i>({ePct}% × {etotal.FormatEth()} ETH-YLD)</i>\n" +
+                            $"\n" +
+                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD";
+                    }
+
+                    return string.Empty;
             }
 
             return string.Empty;

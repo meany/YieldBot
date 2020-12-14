@@ -23,9 +23,18 @@ namespace dm.YLD.Api.Controllers
 
         // GET data
         [HttpGet]
-        public async Task<ActionResult<Stats>> Get()
+        public async Task<ActionResult<AllInfo>> GetAllInfo()
         {
-            return await Data.Common.GetStatsAndPrices(db);
+            return await Data.Common.GetAllInfo(db);
+        }
+
+        // GET data/supply
+        [HttpGet]
+        [Route("supply")]
+        public async Task<ActionResult<decimal>> GetSupply()
+        {
+            var item = await Data.Common.GetStats(db);
+            return item.Supply;
         }
     }
 }

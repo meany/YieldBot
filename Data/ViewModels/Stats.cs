@@ -5,10 +5,13 @@ using System.Text;
 
 namespace dm.YLD.Data.ViewModels
 {
-    public class Stats
+    public class AllInfo
     {
         public Stat Stat { get; set; }
         public Price Price { get; set; }
+        public List<Holder> Holders { get; set; }
+        public List<LPHolder> RFILiquidityHolders { get; set; }
+        public List<LPHolder> ETHLiquidityHolders { get; set; }
 
         public bool IsOutOfSync()
         {

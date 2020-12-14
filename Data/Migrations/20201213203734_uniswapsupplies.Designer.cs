@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using dm.YLD.Data;
 
 namespace dm.YLD.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20201213203734_uniswapsupplies")]
+    partial class uniswapsupplies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,43 +76,6 @@ namespace dm.YLD.Data.Migrations
                     b.HasIndex("Value");
 
                     b.ToTable("LPHolders");
-                });
-
-            modelBuilder.Entity("dm.YLD.Data.Models.LPTransaction", b =>
-                {
-                    b.Property<int>("LPTransactionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
-
-                    b.Property<string>("BlockNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("From")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Hash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Pair")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("TimeStamp")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("To")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("LPTransactionId");
-
-                    b.HasIndex("Pair");
-
-                    b.HasIndex("TimeStamp");
-
-                    b.ToTable("LPTransactions");
                 });
 
             modelBuilder.Entity("dm.YLD.Data.Models.Price", b =>
