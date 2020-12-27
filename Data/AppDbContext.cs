@@ -10,11 +10,13 @@ namespace dm.YLD.Data
     {
         public DbSet<Holder> Holders { get; set; }
         public DbSet<LPHolder> LPHolders { get; set; }
+        public DbSet<GardenHolder> GardenHolders { get; set; }
         public DbSet<Price> Prices { get; set; }
         public DbSet<Request> Requests { get; set; }
         public DbSet<Stat> Stats { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<LPTransaction> LPTransactions { get; set; }
+        public DbSet<GardenTransaction> GardenTransactions { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -27,6 +29,10 @@ namespace dm.YLD.Data
             modelBuilder.Entity<LPHolder>()
                 .HasIndex(x => x.Value);
             modelBuilder.Entity<LPHolder>()
+                .HasIndex(x => x.Pair);
+            modelBuilder.Entity<GardenHolder>()
+                .HasIndex(x => x.Value);
+            modelBuilder.Entity<GardenHolder>()
                 .HasIndex(x => x.Pair);
             modelBuilder.Entity<Price>()
                 .HasIndex(x => x.Group);
@@ -43,6 +49,10 @@ namespace dm.YLD.Data
             modelBuilder.Entity<LPTransaction>()
                 .HasIndex(x => x.TimeStamp);
             modelBuilder.Entity<LPTransaction>()
+                .HasIndex(x => x.Pair);
+            modelBuilder.Entity<GardenTransaction>()
+               .HasIndex(x => x.TimeStamp);
+            modelBuilder.Entity<GardenTransaction>()
                 .HasIndex(x => x.Pair);
         }
     }

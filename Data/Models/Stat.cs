@@ -26,8 +26,12 @@ namespace dm.YLD.Data.Models
         [Column(TypeName = "decimal(25, 18)")]
         public decimal HolderCirculation { get; set; }
         [Column(TypeName = "decimal(25, 18)")]
-        public decimal UniswapRFISupply { get; set; }
+        public decimal UniswapRFIAmount { get; set; }
         [Column(TypeName = "decimal(25, 18)")]
-        public decimal UniswapETHSupply { get; set; }
+        public decimal UniswapETHAmount { get; set; }
+        [Column(TypeName = "decimal(25, 18)")]
+        public decimal GardenRFISupply { get; set; }
+        [Column(TypeName = "decimal(25, 18)")]
+        public decimal GardenETHSupply { get; set; }
     }
 }
