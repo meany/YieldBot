@@ -501,7 +501,9 @@ namespace dm.YLD.Stats
                 x.Address != Statics.ADDRESS_COINER &&
                 x.Address != Statics.ADDRESS_FIRST_RFI &&
                 x.Address != Statics.TOKEN_UNISWAP_RFI &&
-                x.Address != Statics.TOKEN_UNISWAP_ETH));
+                x.Address != Statics.TOKEN_UNISWAP_ETH &&
+                x.Address != Statics.TOKEN_ETHYLD_FARM &&
+                x.Address != Statics.TOKEN_RFIYLD_FARM));
             await db.SaveChangesAsync();
         }
 
@@ -559,7 +561,9 @@ namespace dm.YLD.Stats
                 x.Address != Statics.ADDRESS_COINER &&
                 x.Address != Statics.ADDRESS_FIRST_RFI &&
                 x.Address != Statics.TOKEN_UNISWAP_RFI &&
-                x.Address != Statics.TOKEN_UNISWAP_ETH));
+                x.Address != Statics.TOKEN_UNISWAP_ETH &&
+                x.Address != Statics.TOKEN_ETHYLD_FARM &&
+                x.Address != Statics.TOKEN_RFIYLD_FARM));
             await db.SaveChangesAsync();
         }
     }
