@@ -17,8 +17,10 @@ namespace dm.YLD.Data
             vm.Stat = await GetStats(db);
             vm.Price = await GetPrices(db, vm.Stat.Group);
             vm.Holders = await GetTopHolders(db, 100);
-            vm.RFILiquidityHolders = await GetTopHolders(db, LPPair.RFI_YLD, 100);
-            vm.ETHLiquidityHolders = await GetTopHolders(db, LPPair.ETH_YLD, 100);
+            vm.RFILiquidityHolders = await GetTopLPHolders(db, LPPair.RFI_YLD, 100);
+            vm.ETHLiquidityHolders = await GetTopLPHolders(db, LPPair.ETH_YLD, 100);
+            vm.RFIGardenHolders = await GetTopGardenHolders(db, LPPair.RFI_YLD, 100);
+            vm.RFIGardenHolders = await GetTopGardenHolders(db, LPPair.ETH_YLD, 100);
 
             if (vm.Price == null)
             {
@@ -63,9 +65,22 @@ namespace dm.YLD.Data
                 .ToList();
         }
 
-        public static async Task<List<LPHolder>> GetTopHolders(AppDbContext db, LPPair pair, int takeAmt)
+        public static async Task<List<LPHolder>> GetTopLPHolders(AppDbContext db, LPPair pair, int takeAmt)
         {
             var items = await db.LPHolders
+                .AsNoTracking()
+                .Where(x => x.Pair == pair)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return items.OrderByDescending(x => BigInteger.Parse(x.Value))
+                .Take(takeAmt)
+                .ToList();
+        }
+
+        public static async Task<List<GardenHolder>> GetTopGardenHolders(AppDbContext db, LPPair pair, int takeAmt)
+        {
+            var items = await db.GardenHolders
                 .AsNoTracking()
                 .Where(x => x.Pair == pair)
                 .ToListAsync()

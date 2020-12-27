@@ -86,7 +86,7 @@ namespace dm.YLD.Stats
             try
             {
                 log.Info("Getting Etherscan info");
-                /*
+                
                 await GetInfo();
                 await InsertNewTxs();
                 //await InsertNewLpTxs();
@@ -133,7 +133,6 @@ namespace dm.YLD.Stats
                 //    .OrderBy(x => x.TimeStamp)
                 //    .ToList();
                 //await BuildLPHolders();
-                */
 
                 log.Info("Building garden holders table");
                 dbGardenTxs = db.GardenTransactions

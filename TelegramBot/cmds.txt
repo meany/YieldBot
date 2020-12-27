@@ -6,10 +6,10 @@
 
 <b><u>Top Holders:</u></b>
 <b>/top</b> - Displays the top 10 holders, or provide a number (i.e. "100" would get the top 100 holders)
-<b>/rtop</b> - Displays the top 10 RFI-YLD liquidity provider holders, or provide a number (i.e. "100" would get the top 100 RFI-YLD LP holders)
-<b>/etop</b> - Displays the top 10 ETH-YLD liquidity provider holders, or provide a number (i.e. "100" would get the top 100 ETH-YLD LP holders)
+<b>/rtop</b> - Displays the top 10 RFI-YLD liquidity provider holders in the garden, or provide a number (i.e. "100" would get the top 100 RFI-YLD LP holders)
+<b>/etop</b> - Displays the top 10 ETH-YLD liquidity provider holders in the garden, or provide a number (i.e. "100" would get the top 100 ETH-YLD LP holders)
 
 <b><u>Share Amounts:</u></b>
 <b>/share</b> - Provide a number of YLD (i.e. "350"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of YLD
-<b>/rshare</b> - RFI liquidity provider: Provide a number of RFI-YLD (i.e. "5"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of RFI-YLD
-<b>/eshare</b> - ETH liquidity provider: Provide a number of ETH-YLD (i.e. "0.1"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of ETH-YLD
+<b>/rshare</b> - RFI liquidity provider in the garden: Provide a number of RFI-YLD (i.e. "5"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of RFI-YLD
+<b>/eshare</b> - ETH liquidity provider in the garden: Provide a number of ETH-YLD (i.e. "0.1"), get the share percentage. Provide a percentage (i.e. "0.35%"), get the number of ETH-YLD

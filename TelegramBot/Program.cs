@@ -187,13 +187,13 @@ namespace dm.YLD.TelegramBot
                     if (!int.TryParse(args, out int rtopAmt))
                         rtopAmt = 10;
 
-                    var rtops = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, rtopAmt);
+                    var rtops = await Data.Common.GetTopGardenHolders(db, LPPair.RFI_YLD, rtopAmt);
                     string rreply = string.Empty;
                     for (int i = 0; i < rtops.Count; i++)
                     {
                         var item = rtops[i];
                         var value = BigInteger.Parse(item.Value);
-                        var url = $"https://etherscan.io/token/{Statics.TOKEN_UNISWAP_RFI}?a=" +
+                        var url = $"https://etherscan.io/token/{Statics.TOKEN_RFIYLD_GARDEN}?a=" +
                             item.Address;
                         var shortAddr = item.Address.Substring(0, 10);
                         rreply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatEth()}</b> RFI-YLD\n";
@@ -204,13 +204,13 @@ namespace dm.YLD.TelegramBot
                     if (!int.TryParse(args, out int etopAmt))
                         etopAmt = 10;
 
-                    var etops = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, etopAmt);
+                    var etops = await Data.Common.GetTopGardenHolders(db, LPPair.ETH_YLD, etopAmt);
                     string ereply = string.Empty;
                     for (int i = 0; i < etops.Count; i++)
                     {
                         var item = etops[i];
                         var value = BigInteger.Parse(item.Value);
-                        var url = $"https://etherscan.io/token/{Statics.TOKEN_UNISWAP_ETH}?a=" +
+                        var url = $"https://etherscan.io/token/{Statics.TOKEN_ETHYLD_GARDEN}?a=" +
                             item.Address;
                         var shortAddr = item.Address.Substring(0, 10);
                         ereply += $"<i>{i + 1}</i>. <a href='{url}'>{shortAddr}</a>: <b>{value.ToEth().FormatEth()}</b> ETH-YLD\n";
@@ -280,7 +280,7 @@ namespace dm.YLD.TelegramBot
                         if (rAmt <= 0)
                             return "Amount must be greater than 0.";
 
-                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, int.MaxValue);
+                        var rstats = await Data.Common.GetTopGardenHolders(db, LPPair.RFI_YLD, int.MaxValue);
                         decimal rtotal = rstats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         if (rAmt > rtotal)
@@ -307,7 +307,7 @@ namespace dm.YLD.TelegramBot
                         if (rPct <= 0 || rPct >= 100)
                             return "Percentage must be greater than 0 and less than 100.";
 
-                        var rstats = await Data.Common.GetTopHolders(db, LPPair.RFI_YLD, int.MaxValue);
+                        var rstats = await Data.Common.GetTopGardenHolders(db, LPPair.RFI_YLD, int.MaxValue);
                         decimal rtotal = rstats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         decimal amt = rPct / 100 * rtotal;
@@ -334,7 +334,7 @@ namespace dm.YLD.TelegramBot
                         if (eAmt <= 0)
                             return "Amount must be greater than 0.";
 
-                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, int.MaxValue);
+                        var estats = await Data.Common.GetTopGardenHolders(db, LPPair.ETH_YLD, int.MaxValue);
                         decimal etotal = estats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         if (eAmt > etotal)
@@ -361,7 +361,7 @@ namespace dm.YLD.TelegramBot
                         if (ePct <= 0 || ePct >= 100)
                             return "Percentage must be greater than 0 and less than 100.";
 
-                        var estats = await Data.Common.GetTopHolders(db, LPPair.ETH_YLD, int.MaxValue);
+                        var estats = await Data.Common.GetTopGardenHolders(db, LPPair.ETH_YLD, int.MaxValue);
                         decimal etotal = estats.Take(100).Select(x => x.ValueBigInt).Aggregate(BigInteger.Add).ToEth();
 
                         decimal amt = ePct / 100 * etotal;

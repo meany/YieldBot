@@ -12,6 +12,8 @@ namespace dm.YLD.Data.ViewModels
         public List<Holder> Holders { get; set; }
         public List<LPHolder> RFILiquidityHolders { get; set; }
         public List<LPHolder> ETHLiquidityHolders { get; set; }
+        public List<GardenHolder> RFIGardenHolders { get; set; }
+        public List<GardenHolder> ETHGardenHolders { get; set; }
 
         public bool IsOutOfSync()
         {
