@@ -235,7 +235,7 @@ namespace dm.YLD.TelegramBot
 
                         decimal pct = yldAmt / ttotal * 100;
                         decimal airdrop = pct / 100 * 25000;
-                        
+
                         var tlast = tstats.Take(100).Last();
                         if (yldAmt <= tlast.ValueBigInt.ToEth())
                             airdrop = 0;
@@ -243,10 +243,10 @@ namespace dm.YLD.TelegramBot
                         var position = tstats.Count(x => x.ValueBigInt.ToEth() >= yldAmt) + 1;
 
                         return $"<b>{pct.FormatEth()}%</b>\n" +
-                            $"<i>({yldAmt} ÷ {ttotal.FormatYld()} $YLD)</i>\n" +
-                            $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
-                            $"Position: #<b>{position}</b>";
+                            $"<i>({yldAmt} ÷ {ttotal.FormatYld()} $YLD)</i>";
+                        //$"\n" +
+                        //$"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                        //$"Position: #<b>{position}</b>";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal yldPct))
@@ -266,10 +266,10 @@ namespace dm.YLD.TelegramBot
                         var position = tstats.Count(x => x.ValueBigInt.ToEth() >= amt) + 1;
 
                         return $"<b>{amt.FormatYld()}</b> $YLD\n" +
-                            $"<i>({yldPct}% × {ttotal.FormatYld()} $YLD)</i>\n" +
-                            $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
-                            $"Position: #<b>{position}</b>";
+                            $"<i>({yldPct}% × {ttotal.FormatYld()} $YLD)</i>";
+                        //$"\n" +
+                        //$"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                        //$"Position: #<b>{position}</b>";
                     }
 
                     return string.Empty;
@@ -296,10 +296,10 @@ namespace dm.YLD.TelegramBot
                         var position = rstats.Count(x => x.ValueBigInt.ToEth() >= rAmt) + 1;
 
                         return $"<b>{pct.FormatEth()}%</b>\n" +
-                            $"<i>({rAmt} ÷ {rtotal.FormatEth()} RFI-YLD)</i>\n" +
-                            $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
-                            $"Position: #<b>{position}</b>";
+                            $"<i>({rAmt} ÷ {rtotal.FormatEth()} RFI-YLD)</i>";
+                        //$"\n" +
+                        //$"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                        //$"Position: #<b>{position}</b>";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal rPct))
@@ -320,10 +320,10 @@ namespace dm.YLD.TelegramBot
                         var position = rstats.Count(x => x.ValueBigInt.ToEth() >= amt) + 1;
 
                         return $"<b>{amt.FormatEth()}</b> RFI-YLD\n" +
-                            $"<i>({rPct}% × {rtotal.FormatEth()} RFI-YLD)</i>\n" +
-                            $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
-                            $"Position: #<b>{position}</b>";
+                            $"<i>({rPct}% × {rtotal.FormatEth()} RFI-YLD)</i>";
+                        //$"\n" +
+                        //$"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                        //$"Position: #<b>{position}</b>";
                     }
 
                     return string.Empty;
@@ -350,10 +350,10 @@ namespace dm.YLD.TelegramBot
                         var position = estats.Count(x => x.ValueBigInt.ToEth() >= eAmt) + 1;
 
                         return $"<b>{pct.FormatEth()}%</b>\n" +
-                            $"<i>({eAmt} ÷ {etotal.FormatEth()} ETH-YLD)</i>\n" +
-                            $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
-                            $"Position: #<b>{position}</b>";
+                            $"<i>({eAmt} ÷ {etotal.FormatEth()} ETH-YLD)</i>";
+                        //$"\n" +
+                        //$"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                        //$"Position: #<b>{position}</b>";
                     }
                     else if (args.Contains('%') &&
                         decimal.TryParse(args.TrimEnd('%', ' ').Replace(",", string.Empty), out decimal ePct))
@@ -374,10 +374,10 @@ namespace dm.YLD.TelegramBot
                         var position = estats.Count(x => x.ValueBigInt.ToEth() >= amt) + 1;
 
                         return $"<b>{amt.FormatEth()}</b> ETH-YLD\n" +
-                            $"<i>({ePct}% × {etotal.FormatEth()} ETH-YLD)</i>\n" +
-                            $"\n" +
-                            $"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
-                            $"Position: #<b>{position}</b>";
+                            $"<i>({ePct}% × {etotal.FormatEth()} ETH-YLD)</i>";
+                        //$"\n" +
+                        //$"Airdrop: <b>{airdrop.FormatUsd()}</b> $YLD\n" +
+                        //$"Position: #<b>{position}</b>";
                     }
 
                     return string.Empty;
