@@ -32,7 +32,6 @@ namespace dm.YLD.Stats
 
         private BigInteger supply;
         private BigInteger teamAmt;
-        private BigInteger xb5b9Amt;
         private BigInteger uniswapRfiAmt;
         private BigInteger gardenRfiSupply;
         //private BigInteger firstRfiAmt;
@@ -99,7 +98,7 @@ namespace dm.YLD.Stats
                 int totalTxs = (dbTxs.Count - 1) / 2;
 
                 var fullCirculation = supply - teamAmt;
-                var holderCirculation = fullCirculation - xb5b9Amt - uniswapRfiAmt - uniswapEthAmt;
+                var holderCirculation = fullCirculation - uniswapRfiAmt - uniswapEthAmt;
                 //var rfiSupply = gardenRfiSupply - firstRfiAmt;
                 //var ethSupply = gardenEthSupply - firstEthAmt;
 
@@ -140,6 +139,8 @@ namespace dm.YLD.Stats
                     .OrderBy(x => x.TimeStamp)
                     .ToList();
                 await BuildGardenHolders();
+
+                log.Info("Complete");
             }
             catch (Exception ex)
             {
@@ -160,8 +161,6 @@ namespace dm.YLD.Stats
                 await Task.Delay(400);
                 await GetTeamAmount(client);
                 await Task.Delay(400);
-                await Getxb5b9Amount(client);
-                await Task.Delay(400);
                 await GetUniswapRFIAmount(client);
                 await Task.Delay(400);
                 await GetGardenRFISupply(client);
@@ -174,7 +173,6 @@ namespace dm.YLD.Stats
                     uniswapEthAmt == 0 ||
                     gardenRfiSupply == 0 ||
                     uniswapRfiAmt == 0 ||
-                    xb5b9Amt == 0 ||
                     teamAmt == 0 ||
                     supply == 0 ||
                     esGardenTxs == null ||
@@ -247,22 +245,6 @@ namespace dm.YLD.Stats
             var res = await client.ExecuteAsync<EsToken>(req);
             teamAmt = BigInteger.Parse(res.Data.Result);
             log.Info($"GetTeamAmount: OK ({teamAmt})");
-        }
-
-        private async Task Getxb5b9Amount(RestClient client)
-        {
-            var req = new RestRequest("api", Method.GET);
-            req.AddParameter("time", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            req.AddParameter("module", "account");
-            req.AddParameter("action", "tokenbalance");
-            req.AddParameter("contractaddress", Statics.TOKEN_YLD);
-            req.AddParameter("address", Statics.ADDRESS_COINER);
-            req.AddParameter("tag", "latest");
-            req.AddParameter("apikey", config.EtherscanToken);
-
-            var res = await client.ExecuteAsync<EsToken>(req);
-            xb5b9Amt = BigInteger.Parse(res.Data.Result);
-            log.Info($"Get0xb5b9Amount: OK ({xb5b9Amt})");
         }
 
         private async Task GetUniswapRFIAmount(RestClient client)
