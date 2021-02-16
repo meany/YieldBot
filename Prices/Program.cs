@@ -22,8 +22,7 @@ namespace dm.YLD.Prices
         private AppDbContext db;
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        private TickerById data;
-        private CoinFullDataById otherData;
+        private CoinFullDataById data;
 
         public static void Main(string[] args)
             => new Program().MainAsync(args).GetAwaiter().GetResult();
@@ -72,16 +71,16 @@ namespace dm.YLD.Prices
                 await GetInfo();
 
                 // market cap
-                decimal mktCapUsd = decimal.Parse(otherData.MarketData.MarketCap["usd"].Value.ToString());
-                decimal mktCapUsdChgAmt = (otherData.MarketData.MarketCapChange24HInCurrency.Count == 0) ? 0 : decimal.Parse(otherData.MarketData.MarketCapChange24HInCurrency["usd"].ToString(), NumberStyles.Any);
+                decimal mktCapUsd = decimal.Parse(data.MarketData.MarketCap["usd"].Value.ToString());
+                decimal mktCapUsdChgAmt = (data.MarketData.MarketCapChange24HInCurrency.Count == 0) ? 0 : decimal.Parse(data.MarketData.MarketCapChange24HInCurrency["usd"].ToString(), NumberStyles.Any);
                 Change mktCapUsdChg = (mktCapUsdChgAmt > 0) ? Change.Up : (mktCapUsdChgAmt < 0) ? Change.Down : Change.None;
-                decimal mktCapUsdChgPct = (otherData.MarketData.MarketCapChangePercentage24HInCurrency.Count == 0) ? 0 : decimal.Parse(otherData.MarketData.MarketCapChangePercentage24HInCurrency["usd"].ToString(), NumberStyles.Any);
+                decimal mktCapUsdChgPct = (data.MarketData.MarketCapChangePercentage24HInCurrency.Count == 0) ? 0 : decimal.Parse(data.MarketData.MarketCapChangePercentage24HInCurrency["usd"].ToString(), NumberStyles.Any);
 
                 // volume
-                int volumeUsd = (int)Math.Round(data.Tickers[0].ConvertedVolume["usd"]);
+                int volumeUsd = (int)Math.Round(data.MarketData.TotalVolume["usd"].Value);
 
                 // prices
-                decimal priceBtc = decimal.Parse(data.Tickers[0].ConvertedLast["btc"].ToString(), NumberStyles.Any);
+                decimal priceBtc = decimal.Parse(data.MarketData.CurrentPrice["btc"].Value.ToString(), NumberStyles.Any);
 
                 string changeBtc = "0";
                 string changeEth = "0";
@@ -89,27 +88,27 @@ namespace dm.YLD.Prices
                 string changeBtcPct = "0";
                 string changeEthPct = "0";
                 string changeUsdPct = "0";
-                if (otherData.MarketData.PriceChange24HInCurrency.Count > 0 &&
-                    otherData.MarketData.PriceChangePercentage24HInCurrency.Count > 0)
+                if (data.MarketData.PriceChange24HInCurrency.Count > 0 &&
+                    data.MarketData.PriceChangePercentage24HInCurrency.Count > 0)
                 {
-                    changeBtc = otherData.MarketData.PriceChange24HInCurrency["btc"].ToString();
-                    changeBtcPct = otherData.MarketData.PriceChangePercentage24HInCurrency["btc"].ToString();
-                    changeEth = otherData.MarketData.PriceChange24HInCurrency["eth"].ToString();
-                    changeEthPct = otherData.MarketData.PriceChangePercentage24HInCurrency["eth"].ToString();
-                    changeUsd = otherData.MarketData.PriceChange24HInCurrency["usd"].ToString();
-                    changeUsdPct = otherData.MarketData.PriceChangePercentage24HInCurrency["usd"].ToString();
+                    changeBtc = data.MarketData.PriceChange24HInCurrency["btc"].ToString();
+                    changeBtcPct = data.MarketData.PriceChangePercentage24HInCurrency["btc"].ToString();
+                    changeEth = data.MarketData.PriceChange24HInCurrency["eth"].ToString();
+                    changeEthPct = data.MarketData.PriceChangePercentage24HInCurrency["eth"].ToString();
+                    changeUsd = data.MarketData.PriceChange24HInCurrency["usd"].ToString();
+                    changeUsdPct = data.MarketData.PriceChangePercentage24HInCurrency["usd"].ToString();
                 }
 
                 decimal priceBtcChgAmt = decimal.Parse(changeBtc, NumberStyles.Any);
                 Change priceBtcChg = (priceBtcChgAmt > 0) ? Change.Up : (priceBtcChgAmt < 0) ? Change.Down : Change.None;
                 decimal priceBtcChgPct = decimal.Parse(changeBtcPct, NumberStyles.Any);
 
-                decimal priceEth = decimal.Parse(data.Tickers[0].ConvertedLast["eth"].ToString(), NumberStyles.Any);
+                decimal priceEth = decimal.Parse(data.MarketData.CurrentPrice["eth"].Value.ToString(), NumberStyles.Any);
                 decimal priceEthChgAmt = decimal.Parse(changeEth, NumberStyles.Any);
                 Change priceEthChg = (priceEthChgAmt > 0) ? Change.Up : (priceEthChgAmt < 0) ? Change.Down : Change.None;
                 decimal priceEthChgPct = decimal.Parse(changeEthPct, NumberStyles.Any);
 
-                decimal priceUsd = decimal.Parse(data.Tickers[0].ConvertedLast["usd"].ToString(), NumberStyles.Any);
+                decimal priceUsd = decimal.Parse(data.MarketData.CurrentPrice["usd"].Value.ToString(), NumberStyles.Any);
                 decimal priceUsdChgAmt = decimal.Parse(changeUsd, NumberStyles.Any);
                 Change priceUsdChg = (priceUsdChgAmt > 0) ? Change.Up : (priceUsdChgAmt < 0) ? Change.Down : Change.None;
                 decimal priceUsdChgPct = decimal.Parse(changeUsdPct, NumberStyles.Any);
@@ -150,7 +149,7 @@ namespace dm.YLD.Prices
 
             GetPrices();
 
-            while (data == null || otherData == null)
+            while (data == null)
                 await Task.Delay(200);
 
         }
@@ -160,9 +159,7 @@ namespace dm.YLD.Prices
             try
             {
                 var client = CoinGeckoClient.Instance;
-                string[] exchanges = new string[] { "sushiswap" };
-                data = await client.CoinsClient.GetTickerByCoinId("yield", exchanges, null);
-                otherData = await client.CoinsClient.GetAllCoinDataWithId("yield", "false", true, true, false, false, false);
+                data = await client.CoinsClient.GetAllCoinDataWithId("yield", "false", true, true, false, false, false);
 
                 log.Info($"GetPrices: OK");
             }
